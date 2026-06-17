@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { ClarityPack } from "@/lib/clarityPack";
-import { defaultUI, PAGE_LANGUAGES, RTL_LANGUAGES, type UI } from "@/lib/ui";
+import { defaultUI, LANG_CODES, PAGE_LANGUAGES, RTL_LANGUAGES, type UI } from "@/lib/ui";
 
 // Sample document bodies (never translated — this is the English input to explain).
 const SAMPLE_ICONS = ["🍎", "🛂", "🏠", "⚖️", "🏥", "💡"];
@@ -61,6 +61,8 @@ type HistoryEntry = {
 };
 
 const HISTORY_KEY = "clarity:history:v1";
+const LANG_KEY = "clarity:pagelang:v1";
+const UICACHE_KEY = "clarity:uicache:v1";
 const HISTORY_LIMIT = 15;
 
 function loadHistory(): HistoryEntry[] {
@@ -104,9 +106,50 @@ export default function Home() {
   const isRtl = RTL_LANGUAGES.includes(pageLanguage);
   const wantsTranslation = pageLanguage !== "English";
 
+  // Restore history + the visitor's saved language (and its cached translation)
+  // so the page comes back in their language on reload — no repeat API call.
   useEffect(() => {
     setHistory(loadHistory());
+    try {
+      const savedCache = JSON.parse(
+        window.localStorage.getItem(UICACHE_KEY) || "null",
+      ) as Record<string, UI> | null;
+      if (savedCache) setUiCache({ English: defaultUI, ...savedCache });
+      const savedLang = window.localStorage.getItem(LANG_KEY);
+      if (savedLang && savedLang !== "English") {
+        const dict = savedCache?.[savedLang];
+        if (dict) {
+          setUi(dict);
+          setPageLanguage(savedLang);
+        } else {
+          translatePage(savedLang);
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Persist the chosen language and keep the document's lang/dir in sync (a11y).
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(LANG_KEY, pageLanguage);
+    } catch {
+      /* ignore */
+    }
+    document.documentElement.lang = LANG_CODES[pageLanguage] ?? "en";
+    document.documentElement.dir = RTL_LANGUAGES.includes(pageLanguage) ? "rtl" : "ltr";
+  }, [pageLanguage]);
+
+  // Persist translated dictionaries so languages don't need re-fetching.
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(UICACHE_KEY, JSON.stringify(uiCache));
+    } catch {
+      /* ignore */
+    }
+  }, [uiCache]);
 
   async function translatePage(lang: string) {
     setError(null);

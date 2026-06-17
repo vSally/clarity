@@ -49,7 +49,7 @@ export async function POST(req: Request) {
   try {
     const response = await client.messages.parse({
       model: "claude-opus-4-8",
-      max_tokens: 2000,
+      max_tokens: 4000,
       messages: [{ role: "user", content: instructions }],
       output_config: { format: zodOutputFormat(TranslationSchema) },
     });

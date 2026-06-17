@@ -69,3 +69,18 @@ export const PAGE_LANGUAGES = [
 
 // Languages that read right-to-left.
 export const RTL_LANGUAGES = ["Arabic", "Dari", "Pashto", "Urdu", "Farsi", "Persian", "Hebrew"];
+
+// Map language names to BCP-47 codes for the document's `lang` attribute (a11y).
+export const LANG_CODES: Record<string, string> = {
+  English: "en",
+  Spanish: "es",
+  Arabic: "ar",
+  Ukrainian: "uk",
+  "Haitian Creole": "ht",
+  Dari: "prs",
+  Swahili: "sw",
+  French: "fr",
+  Mandarin: "zh",
+  Somali: "so",
+  Vietnamese: "vi",
+};
