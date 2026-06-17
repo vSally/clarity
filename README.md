@@ -1,36 +1,65 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Clarity
 
-## Getting Started
+**Understand any official document.** Paste a confusing benefits letter, court notice, or government form and Clarity uses Claude to return a plain-language explanation, a checklist of what to do (with deadlines), questions you could ask, and a translation into your language — with a reminder to verify important details with a qualified person.
 
-First, run the development server:
+![status](https://img.shields.io/badge/stage-MVP-blue)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Why
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+People navigating a new country — refugees, immigrants, and the caseworkers helping them — face a flood of dense official documents with critical deadlines buried in bureaucratic English. Missing one can have serious consequences. Clarity turns that document into something clear, structured, and translated in seconds.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## What it generates
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+From pasted document text (plus a target language), Clarity returns:
 
-## Learn More
+1. **Document type** — what kind of document it is
+2. **Urgency level** — a color-coded badge (act soon / don't delay / informational) with the reason
+3. **Plain-language summary** — ~6th-grade reading level
+4. **What this means for you** — a plain interpretation
+5. **Action items & deadlines** — a structured checklist
+6. **Confusing words, explained** — a plain-language glossary of the document's official/legal jargon
+7. **Questions to ask** — for a caseworker, lawyer, or the issuing office
+8. **Translation** — the summary in a language you choose (one-click copy)
+9. **Safety note** — every result is an AI draft; verify important details with a qualified person
 
-To learn more about Next.js, take a look at the following resources:
+The home page also offers **six realistic sample documents** (benefits, immigration, housing,
+court, medical, utilities) to try instantly, quick-select chips for common languages, and an
+**"Already explained" tab** that saves past results in your browser.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Tech
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Next.js (App Router) + TypeScript + Tailwind CSS**
+- **Anthropic API** — `claude-opus-4-8` with structured (schema-validated) output
+- Designed to deploy to **Vercel**
 
-## Deploy on Vercel
+## Run it locally
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+2. Add your Anthropic API key (get one at [console.anthropic.com](https://console.anthropic.com); new accounts get free trial credits):
+   ```bash
+   cp .env.local.example .env.local
+   # then edit .env.local and paste your key
+   ```
+3. Start the dev server:
+   ```bash
+   npm run dev
+   ```
+4. Open <http://localhost:3000>, click a **sample document** (or paste your own), pick a language, and click **Explain this document**.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Roadmap
+
+- [x] One-click sample documents and quick-select languages
+- [x] Urgency rating and a plain-language glossary of confusing terms
+- [x] Saved history of past explanations
+- [x] Deployed to Vercel with a public demo URL
+- [ ] Upload a photo or PDF of a document (Claude reads it directly)
+- [ ] Generate translations in several languages at once
+- [ ] Audio playback of the plain-language summary
+- [ ] A "simplify even more" toggle for lower reading levels
+
+---
+
+Built as a portfolio project exploring AI for mission-driven organizations. See [SPEC.md](SPEC.md) for the full design.
