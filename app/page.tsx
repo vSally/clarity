@@ -255,36 +255,11 @@ export default function Home() {
   const selected = history.find((h) => h.id === selectedId) ?? null;
 
   return (
-    <main dir={isRtl ? "rtl" : "ltr"} className="mx-auto max-w-5xl px-6 py-12">
-      <div className="mb-6 flex items-start justify-between gap-4">
-        <h1 className="text-4xl font-bold tracking-tight text-slate-900">Clarity</h1>
-        {/* Whole-site language switcher */}
-        <div className="flex items-center gap-2">
-          <span aria-hidden className="text-lg">🌐</span>
-          <label className="sr-only" htmlFor="pagelang">
-            {ui.langLabel}
-          </label>
-          <select
-            id="pagelang"
-            value={pageLanguage}
-            onChange={(e) => translatePage(e.target.value)}
-            disabled={uiBusy}
-            className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-800 focus:border-slate-500 focus:outline-none disabled:opacity-50"
-          >
-            {PAGE_LANGUAGES.map((l) => {
-              const native = LANG_ENDONYMS[l];
-              return (
-                <option key={l} value={l}>
-                  {l === "English" || !native || native === l ? l : `${l} / ${native}`}
-                </option>
-              );
-            })}
-          </select>
-          {uiBusy && <span className="text-xs text-slate-400">{ui.translating}</span>}
-        </div>
-      </div>
+    <div className="mx-auto flex max-w-6xl flex-col-reverse gap-6 px-6 py-10 lg:flex-row lg:items-start lg:gap-8">
+      <main dir={isRtl ? "rtl" : "ltr"} className="min-w-0 flex-1">
+        <h1 className="mb-6 text-4xl font-bold tracking-tight text-slate-900">Clarity</h1>
 
-      <p className="mb-8 max-w-3xl text-lg text-slate-600">{ui.tagline}</p>
+        <p className="mb-8 max-w-3xl text-lg text-slate-600">{ui.tagline}</p>
 
       {/* Tabs */}
       <div className="mb-8 flex gap-1 border-b border-slate-200">
@@ -422,7 +397,57 @@ export default function Home() {
           )}
         </div>
       )}
-    </main>
+      </main>
+
+      {/* Always-visible language rail — so a visitor who can't read English can
+          spot their own language immediately, without opening a menu. Sits down
+          the right side on desktop and moves to the top on small screens. */}
+      <aside className="w-full lg:w-56 lg:shrink-0">
+        <div className="lg:sticky lg:top-6">
+          <div className="mb-2 flex items-center gap-2">
+            <span aria-hidden className="text-base">🌐</span>
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              {ui.langLabel}
+            </span>
+            {uiBusy && <span className="text-xs text-slate-400">{ui.translating}</span>}
+          </div>
+          <div className="flex flex-wrap gap-2 lg:flex-col">
+            {PAGE_LANGUAGES.map((l) => {
+              const native = LANG_ENDONYMS[l] ?? l;
+              const active = pageLanguage === l;
+              return (
+                <button
+                  key={l}
+                  type="button"
+                  lang={LANG_CODES[l] ?? undefined}
+                  onClick={() => translatePage(l)}
+                  disabled={uiBusy}
+                  aria-pressed={active}
+                  className={`rounded-lg border px-3 py-2 text-start transition disabled:opacity-50 ${
+                    active
+                      ? "border-slate-900 bg-slate-900 text-white"
+                      : "border-slate-200 bg-white text-slate-800 hover:border-slate-400 hover:bg-slate-50"
+                  }`}
+                >
+                  <span dir="auto" className="block font-medium leading-tight">
+                    {native}
+                  </span>
+                  {native !== l && (
+                    <span
+                      className={`block text-xs leading-tight ${
+                        active ? "text-white/70" : "text-slate-400"
+                      }`}
+                    >
+                      {l}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </aside>
+    </div>
   );
 }
 
