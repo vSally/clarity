@@ -67,6 +67,23 @@ export const PAGE_LANGUAGES = [
   "Vietnamese",
 ];
 
+// Native name (endonym) for each offered language, so someone who can't read
+// English can still find their own language in the switcher. The English key is
+// kept as the value everywhere else (API, RTL/code lookups); only the label changes.
+export const LANG_ENDONYMS: Record<string, string> = {
+  English: "English",
+  Spanish: "Español",
+  Arabic: "العربية",
+  Ukrainian: "Українська",
+  "Haitian Creole": "Kreyòl Ayisyen",
+  Dari: "دری",
+  Swahili: "Kiswahili",
+  French: "Français",
+  Mandarin: "中文",
+  Somali: "Soomaali",
+  Vietnamese: "Tiếng Việt",
+};
+
 // Languages that read right-to-left.
 export const RTL_LANGUAGES = ["Arabic", "Dari", "Pashto", "Urdu", "Farsi", "Persian", "Hebrew"];
 

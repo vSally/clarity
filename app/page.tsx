@@ -2,7 +2,14 @@
 
 import { useEffect, useState } from "react";
 import type { ClarityPack } from "@/lib/clarityPack";
-import { defaultUI, LANG_CODES, PAGE_LANGUAGES, RTL_LANGUAGES, type UI } from "@/lib/ui";
+import {
+  defaultUI,
+  LANG_CODES,
+  LANG_ENDONYMS,
+  PAGE_LANGUAGES,
+  RTL_LANGUAGES,
+  type UI,
+} from "@/lib/ui";
 
 // Sample document bodies (never translated — this is the English input to explain).
 const SAMPLE_ICONS = ["🍎", "🛂", "🏠", "⚖️", "🏥", "💡"];
@@ -264,11 +271,14 @@ export default function Home() {
             disabled={uiBusy}
             className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-800 focus:border-slate-500 focus:outline-none disabled:opacity-50"
           >
-            {PAGE_LANGUAGES.map((l) => (
-              <option key={l} value={l}>
-                {l}
-              </option>
-            ))}
+            {PAGE_LANGUAGES.map((l) => {
+              const native = LANG_ENDONYMS[l];
+              return (
+                <option key={l} value={l}>
+                  {l === "English" || !native || native === l ? l : `${l} / ${native}`}
+                </option>
+              );
+            })}
           </select>
           {uiBusy && <span className="text-xs text-slate-400">{ui.translating}</span>}
         </div>
