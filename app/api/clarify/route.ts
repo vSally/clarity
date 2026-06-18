@@ -41,6 +41,8 @@ export async function POST(req: Request) {
     "Be accurate. Do not invent rights, deadlines, or facts that are not in the document. If something important is unclear or missing, say so plainly and suggest asking about it.",
     "Assess how urgent this is: 'high' if there is a near deadline or a serious consequence like losing benefits, housing, or a legal right; 'low' if it is purely informational.",
     "For keyTerms, pick the 3-6 most confusing official, legal, or bureaucratic words or phrases that actually appear in the document, and define each in simple words. If the document is already simple, return fewer or an empty list.",
+    "For whereToGetHelp, suggest the kinds of free or low-cost help that fit this exact document (for example free immigration legal aid for an immigration notice, tenant rights legal aid for an eviction notice, a benefits caseworker for a benefits letter). Name only the TYPE of help — never invent organization names, phone numbers, or websites.",
+    "For scamWarning, watch for signs of fraud that target newcomers: demands to pay by gift card, wire, or cryptocurrency; threats of immediate arrest or deportation; requests for passwords or a full Social Security number; pressure to act within minutes; or mismatched or unofficial contact details. If you see such red flags, write a short, calm warning naming them and advising the reader to verify with the official agency through a known channel before paying or sharing anything. If there are no clear red flags, set scamWarning to null — do not invent suspicion.",
     `Translate the plain-language summary into: ${language}. Use natural, simple wording in that language.`,
     "",
     "DOCUMENT:",

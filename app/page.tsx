@@ -69,8 +69,16 @@ type HistoryEntry = {
 
 const HISTORY_KEY = "clarity:history:v1";
 const LANG_KEY = "clarity:pagelang:v1";
-const UICACHE_KEY = "clarity:uicache:v1";
+const UICACHE_KEY = "clarity:uicache:v2";
 const HISTORY_LIMIT = 15;
+
+// BCP-47 codes for the browser's speech synthesis (read-aloud). Falls back to
+// the document lang code; a few need a speech-friendly variant.
+const SPEECH_CODES: Record<string, string> = {
+  ...LANG_CODES,
+  Mandarin: "zh-CN",
+  Dari: "fa",
+};
 
 function loadHistory(): HistoryEntry[] {
   if (typeof window === "undefined") return [];
@@ -126,7 +134,7 @@ export default function Home() {
       if (savedLang && savedLang !== "English") {
         const dict = savedCache?.[savedLang];
         if (dict) {
-          setUi(dict);
+          setUi({ ...defaultUI, ...dict });
           setPageLanguage(savedLang);
         } else {
           translatePage(savedLang);
@@ -167,7 +175,7 @@ export default function Home() {
     }
     if (uiCache[lang]) {
       setPageLanguage(lang);
-      setUi(uiCache[lang]);
+      setUi({ ...defaultUI, ...uiCache[lang] });
       return;
     }
     setUiBusy(true);
@@ -334,7 +342,12 @@ export default function Home() {
             {/* Output */}
             <section>
               {result ? (
-                <PackView pack={result} ui={ui} showTranslation={wantsTranslation} />
+                <PackView
+                  pack={result}
+                  ui={ui}
+                  showTranslation={wantsTranslation}
+                  targetLanguage={wantsTranslation ? pageLanguage : "Spanish"}
+                />
               ) : (
                 <div className="flex h-full min-h-64 items-center justify-center rounded-lg border border-dashed border-slate-300 p-8 text-center text-slate-400">
                   {loading ? ui.explaining : ui.outputEmpty}
@@ -362,7 +375,12 @@ export default function Home() {
                 {new Date(selected.createdAt).toLocaleString()} · {ui.translatedInto}{" "}
                 {selected.language}
               </p>
-              <PackView pack={selected.pack} ui={ui} showTranslation />
+              <PackView
+                pack={selected.pack}
+                ui={ui}
+                showTranslation
+                targetLanguage={selected.language}
+              />
             </div>
           ) : (
             <div className="space-y-4">
@@ -455,11 +473,15 @@ function PackView({
   pack,
   ui,
   showTranslation,
+  targetLanguage,
 }: {
   pack: ClarityPack;
   ui: UI;
   showTranslation: boolean;
+  targetLanguage: string;
 }) {
+  // Older saved history entries may predate these fields — guard against undefined.
+  const helpItems = pack.whereToGetHelp ?? [];
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
@@ -469,7 +491,18 @@ function PackView({
         <UrgencyBadge level={pack.urgency.level} reason={pack.urgency.reason} ui={ui} />
       </div>
 
-      <Card title={ui.secPlain}>{pack.plainSummary}</Card>
+      {pack.scamWarning && (
+        <div className="rounded-lg border-2 border-red-300 bg-red-50 p-4">
+          <h2 className="flex items-center gap-2 text-sm font-bold text-red-800">
+            <span aria-hidden>⚠️</span> {ui.scamTitle}
+          </h2>
+          <p className="mt-1 whitespace-pre-wrap text-sm text-red-800">{pack.scamWarning}</p>
+        </div>
+      )}
+
+      <Card title={ui.secPlain} speakText={pack.plainSummary} speakLang="English" ui={ui}>
+        {pack.plainSummary}
+      </Card>
       <Card title={ui.secMeans}>{pack.whatThisMeans}</Card>
 
       <div className="rounded-lg border border-slate-200 p-4">
@@ -517,10 +550,102 @@ function PackView({
         </ul>
       </div>
 
-      {showTranslation && <CopyCard title={ui.secTranslation} text={pack.translation} ui={ui} />}
+      {helpItems.length > 0 && (
+        <div className="rounded-lg border border-slate-200 p-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+            {ui.secHelp}
+          </h2>
+          <ul className="mt-2 space-y-2">
+            {helpItems.map((h, i) => (
+              <li key={i}>
+                <span className="font-medium text-slate-800">{h.kind}</span>
+                <span className="block text-sm text-slate-600">{h.why}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <ResourcesCard ui={ui} />
+
+      {showTranslation && (
+        <CopyCard
+          title={ui.secTranslation}
+          text={pack.translation}
+          ui={ui}
+          speakLang={targetLanguage}
+        />
+      )}
 
       <p className="rounded-md bg-amber-50 px-4 py-3 text-xs text-amber-800">{pack.safetyNote}</p>
     </div>
+  );
+}
+
+// Real, stable national starting points for free help. Kept static (not
+// AI-generated) so the links and phone number are always correct and safe.
+function ResourcesCard({ ui }: { ui: UI }) {
+  const resources = [
+    { href: "tel:211", text: ui.r211 },
+    { href: "https://www.findhelp.org", text: ui.rFindhelp },
+    { href: "https://www.lawhelp.org", text: ui.rLawhelp },
+    { href: "https://www.immigrationlawhelp.org", text: ui.rImmi },
+  ];
+  return (
+    <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+        {ui.resourcesTitle}
+      </h2>
+      <p className="mt-1 text-xs text-slate-500">{ui.resourcesHint}</p>
+      <ul className="mt-2 space-y-2">
+        {resources.map((r, i) => (
+          <li key={i}>
+            <a
+              href={r.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-blue-700 hover:underline"
+            >
+              {r.text}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+// Reads text aloud with the browser's speech synthesis — no API cost. Helps
+// readers with low literacy, low vision, or who simply find official text easier
+// to follow by ear, in English or in their own language.
+function SpeakButton({ text, langName, ui }: { text: string; langName: string; ui: UI }) {
+  const [speaking, setSpeaking] = useState(false);
+
+  function toggle() {
+    if (typeof window === "undefined" || !window.speechSynthesis) return;
+    if (speaking) {
+      window.speechSynthesis.cancel();
+      setSpeaking(false);
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    const code = SPEECH_CODES[langName];
+    if (code) u.lang = code;
+    u.onend = () => setSpeaking(false);
+    u.onerror = () => setSpeaking(false);
+    setSpeaking(true);
+    window.speechSynthesis.speak(u);
+  }
+
+  return (
+    <button
+      onClick={toggle}
+      className="shrink-0 text-xs font-medium text-blue-600 hover:underline"
+      aria-label={speaking ? ui.listenStop : ui.listen}
+    >
+      {speaking ? `■ ${ui.listenStop}` : `▶ ${ui.listen}`}
+    </button>
   );
 }
 
@@ -563,35 +688,65 @@ function UrgencyDot({ level }: { level: ClarityPack["urgency"]["level"] }) {
   return <span className={`inline-block h-2.5 w-2.5 shrink-0 rounded-full ${colors[level]}`} />;
 }
 
-function Card({ title, children }: { title: string; children: React.ReactNode }) {
+function Card({
+  title,
+  children,
+  speakText,
+  speakLang,
+  ui,
+}: {
+  title: string;
+  children: React.ReactNode;
+  speakText?: string;
+  speakLang?: string;
+  ui?: UI;
+}) {
   return (
     <div className="rounded-lg border border-slate-200 p-4">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">{title}</h2>
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">{title}</h2>
+        {speakText && speakLang && ui && (
+          <SpeakButton text={speakText} langName={speakLang} ui={ui} />
+        )}
+      </div>
       <p className="mt-1 whitespace-pre-wrap text-slate-800">{children}</p>
     </div>
   );
 }
 
-function CopyCard({ title, text, ui }: { title: string; text: string; ui: UI }) {
+function CopyCard({
+  title,
+  text,
+  ui,
+  speakLang,
+}: {
+  title: string;
+  text: string;
+  ui: UI;
+  speakLang?: string;
+}) {
   const [copied, setCopied] = useState(false);
   return (
     <div className="rounded-lg border border-slate-200 p-4">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">{title}</h2>
-        <button
-          onClick={async () => {
-            try {
-              await navigator.clipboard.writeText(text);
-              setCopied(true);
-              setTimeout(() => setCopied(false), 1500);
-            } catch {
-              /* ignore */
-            }
-          }}
-          className="shrink-0 text-xs font-medium text-blue-600 hover:underline"
-        >
-          {copied ? ui.copied : ui.copy}
-        </button>
+        <div className="flex shrink-0 items-center gap-3">
+          {speakLang && <SpeakButton text={text} langName={speakLang} ui={ui} />}
+          <button
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(text);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 1500);
+              } catch {
+                /* ignore */
+              }
+            }}
+            className="text-xs font-medium text-blue-600 hover:underline"
+          >
+            {copied ? ui.copied : ui.copy}
+          </button>
+        </div>
       </div>
       <p className="mt-1 whitespace-pre-wrap text-slate-800">{text}</p>
     </div>
